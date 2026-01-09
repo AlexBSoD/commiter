@@ -1,0 +1,11 @@
+# Конфигурационный файл для suggest-commit.fish
+# Скопируйте этот файл в ~/.config/commiter/config и отредактируйте значения
+
+# Адрес Ollama сервера
+OLLAMA_SERVER=http://localhost:11434
+
+# Имя модели
+MODEL_NAME=llama3
+
+# Язык коммитов: 'ru' или 'en'
+LANGUAGE=en
