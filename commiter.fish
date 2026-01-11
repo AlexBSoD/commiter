@@ -1,14 +1,14 @@
 #!/usr/bin/env fish
 
 # Скрипт для генерации текста коммита с помощью Ollama
-# Использование: suggest-commit.fish <git-folder> [ollama-server] [model-name] [language]
+# Использование: suggest-commit.fish [git-folder] [ollama-server] [model-name] [language]
 # Конфигурация: ~/.config/commiter/config
 
 function show_usage
-    echo "Использование: suggest-commit.fish <git-folder> [ollama-server] [model-name] [language]"
+    echo "Использование: suggest-commit.fish [git-folder] [ollama-server] [model-name] [language]"
     echo ""
     echo "Параметры:"
-    echo "  git-folder    - Путь к папке с git репозиторием (обязательный)"
+    echo "  git-folder    - Путь к папке с git репозиторием (опционально, по умолчанию ./)"
     echo "  ollama-server - Адрес Ollama сервера (опционально, из конфига или http://localhost:11434)"
     echo "  model-name    - Имя модели на сервере (опционально, из конфига или llama3)"
     echo "  language      - Язык коммита: 'ru' или 'en' (опционально, из конфига или 'en')"
@@ -18,6 +18,7 @@ function show_usage
     echo "  Параметры командной строки переопределяют значения из конфига"
     echo ""
     echo "Примеры:"
+    echo "  suggest-commit.fish                              # использует текущую директорию"
     echo "  suggest-commit.fish /path/to/repo"
     echo "  suggest-commit.fish /path/to/repo http://localhost:11434"
     echo "  suggest-commit.fish /path/to/repo http://localhost:11434 llama3"
@@ -59,12 +60,17 @@ load_config
 
 # Проверка количества параметров
 set argc (count $argv)
-if test $argc -lt 1 -o $argc -gt 4
+if test $argc -gt 4
     show_usage
     exit 1
 end
 
-set git_folder $argv[1]
+# git-folder по умолчанию - текущая директория
+if test $argc -ge 1
+    set git_folder $argv[1]
+else
+    set git_folder "./"
+end
 
 # Определяем значения параметров (приоритет: CLI > config > defaults)
 if test $argc -ge 2
