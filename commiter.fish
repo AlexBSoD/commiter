@@ -196,10 +196,27 @@ echo ""
 echo "Для применения выполните:"
 # Проверяем, многострочное ли сообщение
 if string match -q '*\n*' "$commit_message"
-    echo "  git commit -m \"\$(cat <<'EOF'"
-    echo "$commit_message"
-    echo "EOF"
-    echo ")\""
+    set git_command "git commit -m \"\$(cat <<'EOF'
+$commit_message
+EOF
+)\""
 else
-    echo "  git commit -m \"$commit_message\""
+    set git_command "git commit -m \"$commit_message\""
+end
+
+echo "  $git_command"
+
+# Копируем команду в буфер обмена
+if command -q wl-copy
+    echo -n "$git_command" | wl-copy
+    echo ""
+    echo "Команда скопирована в буфер обмена (wl-copy)"
+else if command -q xclip
+    echo -n "$git_command" | xclip -selection clipboard
+    echo ""
+    echo "Команда скопирована в буфер обмена (xclip)"
+else if command -q xsel
+    echo -n "$git_command" | xsel --clipboard --input
+    echo ""
+    echo "Команда скопирована в буфер обмена (xsel)"
 end
