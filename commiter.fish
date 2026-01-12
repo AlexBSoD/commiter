@@ -194,4 +194,12 @@ echo "$commit_message"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 echo "Для применения выполните:"
-echo "  git commit -m \"$commit_message\""
+# Проверяем, многострочное ли сообщение
+if string match -q '*\n*' "$commit_message"
+    echo "  git commit -m \"\$(cat <<'EOF'"
+    echo "$commit_message"
+    echo "EOF"
+    echo ")\""
+else
+    echo "  git commit -m \"$commit_message\""
+end
