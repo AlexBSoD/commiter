@@ -1,11 +1,20 @@
-# Конфигурационный файл для suggest-commit.fish
+# Конфигурационный файл для commiter.py
 # Скопируйте этот файл в ~/.config/commiter/config и отредактируйте значения
 
-# Адрес Ollama сервера
-OLLAMA_SERVER=http://localhost:11434
+[DEFAULT]
+# URL вашего OpenWebUI сервера
+api_url = https://your-openwebui.com
 
-# Имя модели
-MODEL_NAME=llama3
+# Токен доступа к OpenWebUI API
+# Получить можно в настройках профиля OpenWebUI -> Settings -> Account -> API Keys
+api_token = your-api-token-here
 
-# Язык коммитов: 'ru' или 'en'
-LANGUAGE=en
+# Название модели для использования
+# Примеры: llama3.2, qwen2.5-coder:7b, deepseek-r1:7b
+model = llama3.2
+
+# Язык для генерации коммита: ru или en
+language = en
+
+# Опционально: путь к git репозиторию по умолчанию
+# git_folder = ./

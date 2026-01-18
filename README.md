@@ -1,6 +1,6 @@
-# Suggest Commit
+# Commiter
 
-Скрипт на Fish shell для автоматической генерации текста git коммита с помощью Ollama.
+Скрипт на Python для автоматической генерации текста git коммита с помощью OpenWebUI.
 
 ## Возможности
 
@@ -8,25 +8,21 @@
 - Генерирует текст коммита в стиле conventional commits
 - Поддерживает русский и английский языки
 - Гибкая конфигурация через файл или параметры командной строки
+- Работает с OpenWebUI через интернет
+- Использует только стандартную библиотеку Python (нет внешних зависимостей)
 
-## Зависимости
+## Требования
 
-- `fish` - Fish shell
+- Python 3.6+
 - `git` - система контроля версий
-- `curl` - для HTTP запросов
-- `jq` - для работы с JSON
-- `ollama` - локальный сервер с языковой моделью
+- Доступ к OpenWebUI серверу и API токен
 
-На NixOS установите через:
+На NixOS установка не требуется, так как Python и git обычно уже установлены.
 
-```nix
-environment.systemPackages = with pkgs; [ fish git curl jq ];
-```
-
-Или через home-manager:
+При необходимости установите через home-manager:
 
 ```nix
-home.packages = with pkgs; [ fish git curl jq ];
+home.packages = with pkgs; [ python3 git ];
 ```
 
 ## Установка
@@ -34,8 +30,8 @@ home.packages = with pkgs; [ fish git curl jq ];
 1. Скопируйте скрипт в удобное место:
 
 ```bash
-cp suggest-commit.fish ~/bin/
-chmod +x ~/bin/suggest-commit.fish
+cp commiter.py ~/bin/commiter
+chmod +x ~/bin/commiter
 ```
 
 2. Создайте конфигурационный файл:
@@ -47,74 +43,100 @@ cp config.example ~/.config/commiter/config
 
 3. Отредактируйте `~/.config/commiter/config`:
 
-```bash
-# Конфигурационный файл для suggest-commit.fish
+```ini
+[DEFAULT]
+# URL вашего OpenWebUI сервера
+api_url = https://your-openwebui.com
 
-# Адрес Ollama сервера
-OLLAMA_SERVER=http://localhost:11434
+# Токен доступа к OpenWebUI API
+# Получить можно в: Settings -> Account -> API Keys
+api_token = your-api-token-here
 
-# Имя модели
-MODEL_NAME=llama3
+# Название модели
+model = llama3.2
 
-# Язык коммитов: 'ru' или 'en'
-LANGUAGE=en
+# Язык коммитов: ru или en
+language = en
 ```
+
+### Получение API токена в OpenWebUI
+
+1. Откройте ваш OpenWebUI в браузере
+2. Перейдите в Settings (Настройки)
+3. Откройте раздел Account (Аккаунт)
+4. Найдите секцию API Keys
+5. Создайте новый API ключ и скопируйте его в конфиг
 
 ## Использование
 
-### С конфигурационным файлом
+### Базовое использование
 
-После настройки конфига достаточно указать только путь к репозиторию:
+После настройки конфига просто запустите скрипт в папке с git репозиторием:
 
-```fish
-suggest-commit.fish /path/to/repo
+```bash
+commiter
 ```
 
 ### С параметрами командной строки
 
 Параметры командной строки переопределяют значения из конфига:
 
-```fish
-# Минимальный вариант (используются значения по умолчанию)
-suggest-commit.fish /path/to/repo
+```bash
+# Указать путь к репозиторию
+commiter --git-folder /path/to/repo
 
-# Указать адрес сервера
-suggest-commit.fish /path/to/repo http://192.168.1.100:11434
+# Указать модель
+commiter --model qwen2.5-coder:7b
 
-# Указать сервер и модель
-suggest-commit.fish /path/to/repo http://localhost:11434 mistral
+# Указать язык коммита
+commiter --language ru
 
-# Указать все параметры, включая язык
-suggest-commit.fish /path/to/repo http://localhost:11434 llama3 ru
+# Использовать другой API URL (переопределяет конфиг)
+commiter --api-url https://another-openwebui.com --api-token your-token
+
+# Комбинирование параметров
+commiter --git-folder /path/to/repo --model llama3.2 --language ru
+```
+
+### Справка по параметрам
+
+```bash
+commiter --help
 ```
 
 ### Приоритет параметров
 
 1. Параметры командной строки (высший приоритет)
-2. Значения из файла конфигурации
+2. Значения из файла конфигурации `~/.config/commiter/config`
 3. Значения по умолчанию:
-   - `OLLAMA_SERVER`: `http://localhost:11434`
-   - `MODEL_NAME`: `llama3`
-   - `LANGUAGE`: `en`
+   - `git_folder`: `./` (текущая директория)
+   - `model`: `llama3.2`
+   - `language`: `en`
 
 ## Примеры
 
 ### Коммит на английском (из текущей папки)
 
-```fish
-suggest-commit.fish .
+```bash
+commiter
 ```
 
 ### Коммит на русском
 
-```fish
-suggest-commit.fish . http://localhost:11434 llama3 ru
+```bash
+commiter --language ru
 ```
 
 ### С другой моделью
 
-```fish
-suggest-commit.fish /path/to/repo http://localhost:11434 mistral
+```bash
+commiter --model deepseek-r1:7b
+```
+
+### Для другого репозитория
+
+```bash
+commiter --git-folder /path/to/another/repo --language ru
 ```
 
 ## Применение результата
@@ -122,30 +144,28 @@ suggest-commit.fish /path/to/repo http://localhost:11434 mistral
 Скрипт выведет предложенный текст коммита и команду для его применения:
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Предложенный текст коммита:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-feat: add commit message generation script with ollama integration
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+feat: add OpenWebUI integration with Python rewrite
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Для применения выполните:
-  git commit -m "feat: add commit message generation script with ollama integration"
+  git commit -m "feat: add OpenWebUI integration with Python rewrite"
+
+Команда скопирована в буфер обмена (wl-copy)
 ```
 
-## Настройка Ollama
+Команда автоматически копируется в буфер обмена (поддерживаются `wl-copy`, `xclip`, `xsel`).
 
-Убедитесь, что Ollama запущена и нужная модель загружена:
+## Доступные модели
 
-```bash
-# Запустить Ollama
-ollama serve
+Используйте любые модели, доступные в вашем OpenWebUI:
 
-# Загрузить модель (в другом терминале)
-ollama pull llama3
-
-# Проверить доступные модели
-ollama list
-```
+- `llama3.2` - быстрая и качественная модель
+- `qwen2.5-coder:7b` - специализирована для кода
+- `deepseek-r1:7b` - хорошо понимает код
+- И любые другие модели из вашего OpenWebUI
 
 ## Лицензия
 
