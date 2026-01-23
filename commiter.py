@@ -92,7 +92,7 @@ def get_git_changes(git_folder):
         sys.exit(1)
 
 
-def generate_commit_message(api_url, api_token, model, language, git_status, git_diff):
+def generate_commit_message(api_url, api_token, model, language, git_status, git_diff, timeout=60):
     """Генерирует текст коммита используя OpenWebUI API"""
 
     # Формирование промпта в зависимости от языка
@@ -143,8 +143,7 @@ Git diff:
 
         print(f"Генерирую предложение коммита с помощью {model}...")
 
-        # Устанавливаем timeout 60 секунд
-        with urllib.request.urlopen(req, timeout=60) as response:
+        with urllib.request.urlopen(req, timeout=timeout) as response:
             response_data = json.loads(response.read().decode('utf-8', errors='replace'))
 
         # Извлечение текста коммита из ответа
@@ -167,7 +166,7 @@ Git diff:
         print(f"Ошибка подключения к API: {e.reason}", file=sys.stderr)
         return None
     except (socket.timeout, TimeoutError):
-        print("Ошибка: Превышено время ожидания ответа от API (60 секунд)", file=sys.stderr)
+        print(f"Ошибка: Превышено время ожидания ответа от API ({timeout} секунд)", file=sys.stderr)
         return None
     except json.JSONDecodeError as e:
         print(f"Ошибка при парсинге JSON ответа: {e}", file=sys.stderr)
@@ -227,6 +226,7 @@ def main():
   api_token = your-api-token-here
   model = llama3.2
   language = en
+  timeout = 60
 
   Параметры командной строки переопределяют значения из конфига.
         """
@@ -263,6 +263,13 @@ def main():
         help='Язык коммита: ru или en (по умолчанию: en)'
     )
 
+    parser.add_argument(
+        '--timeout',
+        type=int,
+        default=int(config.get('timeout', '60')),
+        help='Таймаут запроса к API в секундах (по умолчанию: 60)'
+    )
+
     args = parser.parse_args()
 
     # Проверка обязательных параметров
@@ -295,7 +302,8 @@ def main():
         args.model,
         args.language,
         git_status,
-        git_diff
+        git_diff,
+        args.timeout
     )
 
     if not commit_message:
