@@ -5,6 +5,8 @@
 Использует только стандартную библиотеку Python
 """
 
+__version__ = "0.0.2"
+
 import argparse
 import configparser
 import json
@@ -213,7 +215,7 @@ def main():
 
     # Парсинг аргументов командной строки
     parser = argparse.ArgumentParser(
-        description='Генерация текста коммита с помощью OpenWebUI',
+        description=f'Генерация текста коммита с помощью OpenWebUI (v{__version__})',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Конфигурация:
@@ -230,6 +232,12 @@ def main():
 
   Параметры командной строки переопределяют значения из конфига.
         """
+    )
+
+    parser.add_argument(
+        '--version',
+        action='version',
+        version=f'commiter {__version__}'
     )
 
     parser.add_argument(

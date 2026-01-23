@@ -17,15 +17,22 @@
 - `git` - система контроля версий
 - Доступ к OpenWebUI серверу и API токен
 
-На NixOS установка не требуется, так как Python и git обычно уже установлены.
+## Установка
 
-При необходимости установите через home-manager:
+### NixOS / Nix Flakes (рекомендуется)
+
+Проект предоставляет Nix flake для удобной установки через home-manager:
 
 ```nix
-home.packages = with pkgs; [ python3 git ];
+# В вашем home.nix
+home.packages = [
+  (builtins.getFlake "github:yourusername/commiter").packages.${pkgs.system}.default
+];
 ```
 
-## Установка
+Подробная инструкция по установке через home-manager: [INSTALL.md](INSTALL.md)
+
+### Ручная установка
 
 1. Скопируйте скрипт в удобное место:
 

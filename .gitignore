@@ -67,3 +67,8 @@ uv.lock
 
 # Logs
 *.log
+
+# Nix
+result
+result-*
+.direnv/
