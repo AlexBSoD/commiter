@@ -9,6 +9,7 @@ import argparse
 import configparser
 import json
 import os
+import socket
 import subprocess
 import sys
 import urllib.request
@@ -47,6 +48,8 @@ def get_git_changes(git_folder):
             ["git", "-C", git_folder, "status", "--short"],
             capture_output=True,
             text=True,
+            encoding='utf-8',
+            errors='replace',
             check=True
         )
         git_status = status_result.stdout
@@ -56,6 +59,8 @@ def get_git_changes(git_folder):
             ["git", "-C", git_folder, "diff", "--cached"],
             capture_output=True,
             text=True,
+            encoding='utf-8',
+            errors='replace',
             check=True
         )
         git_diff = diff_result.stdout
@@ -66,14 +71,24 @@ def get_git_changes(git_folder):
                 ["git", "-C", git_folder, "diff"],
                 capture_output=True,
                 text=True,
+                encoding='utf-8',
+                errors='replace',
                 check=True
             )
             git_diff = diff_result.stdout
 
         return git_status, git_diff
 
+    except FileNotFoundError:
+        print("Ошибка: git не найден. Убедитесь, что git установлен и доступен в PATH", file=sys.stderr)
+        sys.exit(1)
     except subprocess.CalledProcessError as e:
         print(f"Ошибка при выполнении git команды: {e}", file=sys.stderr)
+        if e.stderr:
+            print(f"Детали: {e.stderr}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"Неожиданная ошибка при работе с git: {e}", file=sys.stderr)
         sys.exit(1)
 
 
@@ -128,8 +143,9 @@ Git diff:
 
         print(f"Генерирую предложение коммита с помощью {model}...")
 
-        with urllib.request.urlopen(req) as response:
-            response_data = json.loads(response.read().decode('utf-8'))
+        # Устанавливаем timeout 60 секунд
+        with urllib.request.urlopen(req, timeout=60) as response:
+            response_data = json.loads(response.read().decode('utf-8', errors='replace'))
 
         # Извлечение текста коммита из ответа
         if 'choices' in response_data and len(response_data['choices']) > 0:
@@ -140,12 +156,21 @@ Git diff:
             return None
 
     except urllib.error.HTTPError as e:
-        error_body = e.read().decode('utf-8')
+        try:
+            error_body = e.read().decode('utf-8', errors='replace')
+        except Exception:
+            error_body = "Не удалось прочитать тело ответа"
         print(f"Ошибка HTTP {e.code}: {e.reason}", file=sys.stderr)
         print(f"Детали: {error_body}", file=sys.stderr)
         return None
     except urllib.error.URLError as e:
         print(f"Ошибка подключения к API: {e.reason}", file=sys.stderr)
+        return None
+    except (socket.timeout, TimeoutError):
+        print("Ошибка: Превышено время ожидания ответа от API (60 секунд)", file=sys.stderr)
+        return None
+    except json.JSONDecodeError as e:
+        print(f"Ошибка при парсинге JSON ответа: {e}", file=sys.stderr)
         return None
     except Exception as e:
         print(f"Неожиданная ошибка при запросе к API: {e}", file=sys.stderr)
@@ -169,8 +194,12 @@ def copy_to_clipboard(text):
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL
             )
-            proc.stdin.write(text.encode('utf-8'))
-            proc.stdin.close()
+            try:
+                proc.stdin.write(text.encode('utf-8'))
+                proc.stdin.close()
+            except (BrokenPipeError, OSError):
+                # Процесс завершился до записи - пробуем следующую команду
+                continue
             # Не ждем завершения процесса - он продолжит работать в фоне
             return cmd[0]
         except (OSError, FileNotFoundError):
