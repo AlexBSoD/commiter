@@ -5,7 +5,7 @@
 Использует только стандартную библиотеку Python
 """
 
-__version__ = "0.0.2"
+__version__ = "0.0.3"
 
 import argparse
 import configparser
@@ -329,10 +329,10 @@ def main():
     print("Для применения выполните:")
 
     # Формирование команды git commit
-    if '\n' in commit_message:
-        git_command = f"git commit -m \"$(cat <<'EOF'\n{commit_message}\nEOF\n)\""
-    else:
-        git_command = f'git commit -m "{commit_message}"'
+    # Используем printf + git commit -F - для совместимости со всеми shell'ами (bash, zsh, fish)
+    # Экранируем одинарные кавычки: ' -> '\''
+    escaped_message = commit_message.replace("'", "'\\''")
+    git_command = f"printf '%s' '{escaped_message}' | git commit -F -"
 
     print(f"  {git_command}")
 
